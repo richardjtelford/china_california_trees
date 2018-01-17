@@ -2,6 +2,7 @@ library(readxl)
 library(tidyverse)
 library(dplR)
 library(readr)
+library(zoo)
 
 #import data
 china_widths <- read_excel("tree ring width.xlsx", sheet = 1, col_types = rep("numeric", 2)) %>% 
@@ -20,7 +21,7 @@ cali <- read_fwf(
   gather(key = year, value = width, -decade) %>% 
   mutate(year = as.numeric(gsub("w", "", year))) %>% 
   mutate(year = decade + year) %>% 
-  filter(width != 9990)
+  filter(width != 9990, decade %% 10 == 0) %>% 
   arrange(year)
 
 ggplot(cali, aes(x = year, y = width)) + geom_line()
@@ -32,10 +33,8 @@ china_widths <- china_widths %>%  bind_cols(detrend.series(pull(., width)))
 
 
 cors <- data_frame(
-  year = cali$year[1:(nrow(cali)-nrow(china_widths))],
-  cor = sapply(1:(nrow(cali)-nrow(china_widths)), function(n){
-  cor(cali$width[n:(n + nrow(china_widths) - 1)], china_widths$Spline)
-})
+  year = cali$year[1:(nrow(cali) - nrow(china_widths) + 1)],
+  cor = rollapply(cali$width, width = nrow(china_widths), FUN = function(x){cor(x, china_widths$Spline, method = "spearman")}, align = "left")
 )
 
 ggplot(cors, aes(x = year, y = cor)) + 
