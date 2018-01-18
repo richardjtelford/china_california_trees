@@ -44,5 +44,6 @@ ggplot(cors, aes(x = year, y = cor)) +
 
 ggplot(cors, aes(x = year, y = cor)) + 
   geom_line() + 
+  geom_vline(xintercept = -3388, colour = "orange") +
   xlim(-3400, -3300)
 
